@@ -50,13 +50,17 @@ class Artemis:
         _LOGGER.debug(f"Post sent to {url}")
         try:
             async with ClientSession() as session:
-                async with session.post(url, data=data) as response:
+                kwargs = (
+                    {"json": data} if isinstance(data, (list, dict)) else {"data": data}
+                )
+                async with session.post(url, **kwargs) as response:
                     response_text = await response.text()
-                    if response.status != 204:
-                        raise ArtemisCannotConnectError(
-                            f"Server returned status {response.status}: {response_text}"
-                        )
-                    _LOGGER.debug(f"Got post response: {response_text}")
+
+                if response.status != 204:
+                    raise ArtemisCannotConnectError(
+                        f"Server returned status {response.status}: {response_text}"
+                    )
+                _LOGGER.debug(f"Got post response: {response_text}")
 
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to push to {url}") from exc
@@ -84,6 +88,14 @@ class Artemis:
         foreground_path = "/remote/bring-to-foreground"
 
         await self._post(foreground_path, route)
+
+    async def _post_restart(self, args=[]) -> None:
+        """Restart Artemis with optional command line arguments."""
+        _LOGGER.info("Restarting Artemis")
+
+        restart_path = "/remote/restart"
+
+        await self._post(restart_path, args)
 
     async def _post_suspend_profile(
         self, profile_id: str, suspend_state: BoolString
