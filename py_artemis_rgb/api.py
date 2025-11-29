@@ -23,7 +23,7 @@ class Artemis:
 
     async def _fetch(self, path: str) -> dict[Any]:
         url = f"http://{self.config.ip}:{self.config.port}{path}"
-        _LOGGER.debug(f"Fetching {url}")
+        _LOGGER.debug("Fetching %s", url)
         try:
             async with ClientSession() as session:
                 async with session.get(url) as response:
@@ -47,7 +47,7 @@ class Artemis:
 
     async def _post(self, path: str, data: Any) -> None:
         url = f"http://{self.config.ip}:{self.config.port}{path}"
-        _LOGGER.debug(f"Post sent to {url}")
+        _LOGGER.debug("Post sent to %s", url)
         try:
             async with ClientSession() as session:
                 kwargs = (
@@ -60,7 +60,7 @@ class Artemis:
                     raise ArtemisCannotConnectError(
                         f"Server returned status {response.status}: {response_text}"
                     )
-                _LOGGER.debug(f"Got post response: {response_text}")
+                _LOGGER.debug("Got post response: %s", response_text)
 
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to push to {url}") from exc
@@ -83,7 +83,7 @@ class Artemis:
 
     async def _post_bring_to_foreground(self, route="") -> None:
         """Bring Artemis to the foreground, with an optional route to view."""
-        _LOGGER.info(f"Bringing Artemis to the foreground with the route '{route}'")
+        _LOGGER.info("Bringing Artemis to the foreground with the route '%s'", route)
 
         foreground_path = "/remote/bring-to-foreground"
 
@@ -101,7 +101,7 @@ class Artemis:
         self, profile_id: str, suspend_state: BoolString
     ) -> None:
         """Suspend or resume an Artemis profile."""
-        _LOGGER.info(f"Changing profile {profile_id} suspend state to {suspend_state}")
+        _LOGGER.info("Changing profile %s suspend state to %s", profile_id, suspend_state)
 
         suspend_path = f"/profiles/suspend/{profile_id}"
         data = {
