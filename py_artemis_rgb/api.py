@@ -32,7 +32,12 @@ class Artemis:
                             f"Server returned status {response.status}: {error_text}"
                         )
 
-                    return await response.text()
+                    if "application/json" not in response.headers.get("Content-Type", ""):
+                        raise ArtemisCannotConnectError(
+                            "Expected JSON response but got different content type"
+                        )
+
+                    return await response.json()
 
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to fetch {url}") from exc
