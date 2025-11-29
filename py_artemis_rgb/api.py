@@ -21,8 +21,8 @@ class Artemis:
         """Initialize the Artemis API client."""
         self.config = config
 
-    async def _fetch(self, path: str) -> dict[Any]:
-        url = f"http://{self.config.ip}:{self.config.port}{path}"
+    async def _fetch(self, endpoint: str) -> dict[Any]:
+        url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Fetching %s", url)
         try:
             async with ClientSession() as session:
@@ -45,8 +45,8 @@ class Artemis:
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to fetch {url}") from exc
 
-    async def _post(self, path: str, data: Any) -> None:
-        url = f"http://{self.config.ip}:{self.config.port}{path}"
+    async def _post(self, endpoint: str, data: Any) -> None:
+        url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Post sent to %s", url)
         try:
             async with ClientSession() as session:
@@ -69,33 +69,33 @@ class Artemis:
         """Fetch Artemis profile data."""
         _LOGGER.info("Getting Artemis RGB profiles")
 
-        profiles_path = "/profiles"
+        endpoint = "profiles"
 
-        return await self._fetch(profiles_path)
+        return await self._fetch(endpoint)
 
     async def _get_profile_categories(self) -> dict[Any]:
         """Fetch Artemis profile categories."""
         _LOGGER.info("Getting Artemis RGB profile categories")
 
-        categories_path = "/profiles/categories"
+        endpoint = "profiles/categories"
 
-        return await self._fetch(categories_path)
+        return await self._fetch(endpoint)
 
     async def _post_bring_to_foreground(self, route="") -> None:
         """Bring Artemis to the foreground, with an optional route to view."""
         _LOGGER.info("Bringing Artemis to the foreground with the route '%s'", route)
 
-        foreground_path = "/remote/bring-to-foreground"
+        endpoint = "remote/bring-to-foreground"
 
-        await self._post(foreground_path, route)
+        await self._post(endpoint, route)
 
     async def _post_restart(self, args=[]) -> None:
         """Restart Artemis with optional command line arguments."""
         _LOGGER.info("Restarting Artemis")
 
-        restart_path = "/remote/restart"
+        endpoint = "remote/restart"
 
-        await self._post(restart_path, args)
+        await self._post(endpoint, args)
 
     async def _post_suspend_profile(
         self, profile_id: str, suspend_state: BoolString
@@ -103,9 +103,9 @@ class Artemis:
         """Suspend or resume an Artemis profile."""
         _LOGGER.info("Changing profile %s suspend state to %s", profile_id, suspend_state)
 
-        suspend_path = f"/profiles/suspend/{profile_id}"
+        endpoint = f"profiles/suspend/{profile_id}"
         data = {
             "suspend": suspend_state,
         }
 
-        await self._post(suspend_path, data)
+        await self._post(endpoint, data)
