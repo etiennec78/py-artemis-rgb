@@ -43,9 +43,17 @@ class Artemis:
             raise ArtemisCannotConnectError(f"Failed to fetch {url}") from exc
 
     async def _get_profiles(self) -> dict[Any]:
-        """Fetch raw calendar data for given time period."""
+        """Fetch Artemis profile data."""
         _LOGGER.info("Getting Artemis RGB profiles")
 
-        endpoints_path = "/profiles"
+        profiles_path = "/profiles"
 
-        return await self._fetch(endpoints_path)
+        return await self._fetch(profiles_path)
+
+    async def _get_profile_categories(self) -> dict[Any]:
+        """Getch Artemis profile categories."""
+        _LOGGER.info("Getting Artemis RGB profile categories")
+
+        categories_path = "/profiles/categories"
+
+        return await self._fetch(categories_path)
