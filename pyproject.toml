@@ -9,9 +9,7 @@ dependencies = [
   "aiohttp>=3.8.0",
 ]
 authors = [
-  {
-    name="Etienne Coriou", email="etienne.coriou@free.fr"
-  },
+  { name="Etienne Coriou", email="etienne.coriou@free.fr" },
 ]
 description = "Asynchronous Artemis RGB client"
 readme = "README.md"
