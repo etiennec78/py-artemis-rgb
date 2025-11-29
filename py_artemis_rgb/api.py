@@ -97,6 +97,14 @@ class Artemis:
 
         await self._post(endpoint, args)
 
+    async def _post_shutdown(self) -> None:
+        """Shutdown Artemis."""
+        _LOGGER.info("Shutting down Artemis")
+
+        endpoint = "remote/shutdown"
+
+        await self._post(endpoint)
+
     async def _post_suspend_profile(
         self, profile_id: str, suspend_state: BoolString
     ) -> None:
