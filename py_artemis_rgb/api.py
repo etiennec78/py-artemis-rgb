@@ -6,22 +6,25 @@ This module provides functions for interacting with Artemis RGB API endpoints.
 import logging
 from typing import Any
 from aiohttp import ClientError, ClientSession
+from pydantic import ValidationError
+from uuid import UUID
 
 from .config import ArtemisConfig
-from .exceptions import ArtemisCannotConnectError
-from .types import BoolString
+from .exceptions import ArtemisCannotConnectError, ArtemisUnknownType
+from .types import BoolString, ArtemisProfile, ArtemisCategory
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Artemis:
     """Class for interacting with Artemis RGB API."""
+    config: ArtemisConfig
 
     def __init__(self, config: ArtemisConfig):
         """Initialize the Artemis API client."""
         self.config = config
 
-    async def _fetch(self, endpoint: str) -> dict[Any]:
+    async def _fetch(self, endpoint: str) -> Any:
         url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Fetching %s", url)
         try:
@@ -45,14 +48,17 @@ class Artemis:
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to fetch {url}") from exc
 
-    async def _post(self, endpoint: str, data: Any) -> None:
+    async def _post(self, endpoint: str, data: Any = None) -> None:
         url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Post sent to %s", url)
         try:
             async with ClientSession() as session:
-                kwargs = (
-                    {"json": data} if isinstance(data, (list, dict)) else {"data": data}
-                )
+                if data is None:
+                    kwargs = {}
+                elif isinstance(data, (list, dict)):
+                    kwargs = {"json": data}
+                else:
+                    kwargs = {"data": data}
                 async with session.post(url, **kwargs) as response:
                     response_text = await response.text()
 
@@ -65,23 +71,37 @@ class Artemis:
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to push to {url}") from exc
 
-    async def _get_profiles(self) -> dict[Any]:
+    async def _get_profiles(self) -> list[ArtemisProfile]:
         """Fetch Artemis profile data."""
         _LOGGER.info("Getting Artemis RGB profiles")
 
         endpoint = "profiles"
 
-        return await self._fetch(endpoint)
+        result = await self._fetch(endpoint)
+        try:
+            typed_result = [ArtemisProfile(**category) for category in result]
+        except ValidationError as exc:
+            raise ArtemisUnknownType(
+                "The profiles received are not typed as expected. Has the API been modified ?"
+            ) from exc
+        return typed_result
 
-    async def _get_profile_categories(self) -> dict[Any]:
+    async def _get_profile_categories(self) -> list[ArtemisCategory]:
         """Fetch Artemis profile categories."""
         _LOGGER.info("Getting Artemis RGB profile categories")
 
         endpoint = "profiles/categories"
 
-        return await self._fetch(endpoint)
+        result = await self._fetch(endpoint)
+        try:
+            typed_result = [ArtemisCategory(**category) for category in result]
+        except ValidationError as exc:
+            raise ArtemisUnknownType(
+                "The profile categories received are not typed as expected. Has the API been modified ?"
+            ) from exc
+        return typed_result
 
-    async def _post_bring_to_foreground(self, route="") -> None:
+    async def _post_bring_to_foreground(self, route: str = "") -> None:
         """Bring Artemis to the foreground, with an optional route to view."""
         _LOGGER.info("Bringing Artemis to the foreground with the route '%s'", route)
 
@@ -89,7 +109,7 @@ class Artemis:
 
         await self._post(endpoint, route)
 
-    async def _post_restart(self, args=[]) -> None:
+    async def _post_restart(self, args: list[str] = []) -> None:
         """Restart Artemis with optional command line arguments."""
         _LOGGER.info("Restarting Artemis")
 
@@ -106,10 +126,12 @@ class Artemis:
         await self._post(endpoint)
 
     async def _post_suspend_profile(
-        self, profile_id: str, suspend_state: BoolString
+        self, profile_id: UUID, suspend_state: BoolString
     ) -> None:
         """Suspend or resume an Artemis profile."""
-        _LOGGER.info("Changing profile %s suspend state to %s", profile_id, suspend_state)
+        _LOGGER.info(
+            "Changing profile %s suspend state to %s", profile_id, suspend_state
+        )
 
         endpoint = f"profiles/suspend/{profile_id}"
         data = {

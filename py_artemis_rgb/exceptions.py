@@ -17,3 +17,9 @@ class ArtemisCannotConnectError(ArtemisError):
 
     This may be due to network issues, server unavailability, or invalid IP address.
     """
+
+
+class ArtemisUnknownType(ArtemisError):
+    """Exception raised when the data received does not correspond to expected types.
+
+    This may be raised when the API has changed."""
