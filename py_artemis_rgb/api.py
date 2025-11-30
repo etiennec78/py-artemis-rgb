@@ -5,13 +5,14 @@ This module provides functions for interacting with Artemis RGB API endpoints.
 
 import logging
 from typing import Any
+from uuid import UUID
+
 from aiohttp import ClientError, ClientSession
 from pydantic import ValidationError
-from uuid import UUID
 
 from .config import ArtemisConfig
 from .exceptions import ArtemisCannotConnectError, ArtemisUnknownType
-from .types import BoolString, ArtemisProfile, ArtemisCategory
+from .types import ArtemisCategory, ArtemisProfile, BoolString
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,62 +22,65 @@ class ArtemisAPI:
 
     config: ArtemisConfig
 
-    def __init__(self, config: ArtemisConfig):
+    def __init__(self, config: ArtemisConfig) -> None:
         """Initialize the Artemis API client."""
         self.config = config
 
     async def _fetch(self, endpoint: str) -> Any:
-        """Send a get command to Artemis API"""
+        """Send a get command to Artemis API."""
 
         url = f"http://{self.config.host}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Fetching %s", url)
         try:
-            async with ClientSession() as session:
-                async with session.get(url) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        raise ArtemisCannotConnectError(
-                            f"Server returned status {response.status}: {error_text}"
-                        )
+            async with ClientSession() as session, session.get(url) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise ArtemisCannotConnectError(
+                        f"Server returned status {response.status}: {error_text}"
+                    )
 
-                    if "application/json" not in response.headers.get(
-                        "Content-Type", ""
-                    ):
-                        raise ArtemisCannotConnectError(
-                            "Expected JSON response but got different content type"
-                        )
+                if "application/json" not in response.headers.get(
+                    "Content-Type", ""
+                ):
+                    raise ArtemisCannotConnectError(
+                        "Expected JSON response but got different content type"
+                    )
 
-                    return await response.json()
+                return await response.json()
 
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to fetch {url}") from exc
 
-    async def _post(self, endpoint: str, data: Any = None) -> None:
-        """Send a post to Artemis API"""
+    async def _post(
+        self,
+        endpoint: str,
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        """Send a post to Artemis API."""
 
         url = f"http://{self.config.host}:{self.config.port}/{endpoint}"
-        _LOGGER.debug("Post sent to %s", url)
+        _LOGGER.debug("Post sent to %s with data: %s", url, data)
         try:
-            async with ClientSession() as session:
-                if data is None:
-                    kwargs = {}
-                elif isinstance(data, (list, dict)):
-                    kwargs = {"json": data}
-                else:
-                    kwargs = {"data": data}
-                async with session.post(url, **kwargs) as response:
-                    response_text = await response.text()
+            if data is None:
+                kwargs = {}
+            elif isinstance(data, (list, dict)):
+                kwargs = {"json": data}
+            else:
+                kwargs = {"data": data}
+            async with ClientSession() as session, session.post(
+                url, params=params, **kwargs
+            ) as response:
+                response_text = await response.text()
 
-                if response.status != 204:
-                    raise ArtemisCannotConnectError(
-                        f"Server returned status {response.status}: {response_text}"
-                    )
-                _LOGGER.debug("Got post response: %s", response_text)
-
+            if response.status != 204:
+                raise ArtemisCannotConnectError(
+                    f"Server returned status {response.status}: {response_text}"
+                )
+            _LOGGER.debug("Got post response: %s", response_text)
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to push to {url}") from exc
 
-    async def _get_profiles(self) -> list[ArtemisProfile]:
+    async def get_profiles(self) -> list[ArtemisProfile]:
         """Get Artemis profile data."""
         _LOGGER.info("Getting Artemis RGB profiles")
 
@@ -91,7 +95,7 @@ class ArtemisAPI:
             ) from exc
         return typed_result
 
-    async def _get_profile_categories(self) -> list[ArtemisCategory]:
+    async def get_profile_categories(self) -> list[ArtemisCategory]:
         """Get Artemis profile categories data."""
         _LOGGER.info("Getting Artemis RGB profile categories")
 
@@ -106,7 +110,7 @@ class ArtemisAPI:
             ) from exc
         return typed_result
 
-    async def _post_bring_to_foreground(self, route: str = "") -> None:
+    async def post_bring_to_foreground(self, route: str = "") -> None:
         """Bring Artemis to the foreground, with an optional route to view."""
         _LOGGER.info("Bringing Artemis to the foreground with the route '%s'", route)
 
@@ -114,7 +118,7 @@ class ArtemisAPI:
 
         await self._post(endpoint, route)
 
-    async def _post_restart(self, args: list[str] = []) -> None:
+    async def post_restart(self, args: list[str] = []) -> None:
         """Restart Artemis with optional command line arguments."""
         _LOGGER.info("Restarting Artemis")
 
@@ -122,7 +126,7 @@ class ArtemisAPI:
 
         await self._post(endpoint, args)
 
-    async def _post_shutdown(self) -> None:
+    async def post_shutdown(self) -> None:
         """Shutdown Artemis."""
         _LOGGER.info("Shutting down Artemis")
 
@@ -130,7 +134,7 @@ class ArtemisAPI:
 
         await self._post(endpoint)
 
-    async def _post_suspend_profile(
+    async def post_suspend_profile(
         self, profile_id: UUID, suspend_state: BoolString
     ) -> None:
         """Suspend or resume an Artemis profile."""
