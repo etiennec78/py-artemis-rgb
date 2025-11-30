@@ -54,12 +54,15 @@ class ArtemisAPI:
     async def _post(
         self,
         endpoint: str,
-        data: dict[str, Any] | None = None,
+        data: Any = None,
+        params: dict[str, Any] | None = None,
     ) -> None:
         """Send a post to Artemis API."""
 
         url = f"http://{self.config.host}:{self.config.port}/{endpoint}"
-        _LOGGER.debug("Post sent to %s with data: %s", url, data)
+        _LOGGER.debug(
+            "Post sent to %s with data: %s and params: %s", url, data, params
+        )
         try:
             if data is None:
                 kwargs = {}
@@ -143,8 +146,8 @@ class ArtemisAPI:
         )
 
         endpoint = f"profiles/suspend/{profile_id}"
-        data = {
+        params = {
             "suspend": suspend_state,
         }
 
-        await self._post(endpoint, data)
+        await self._post(endpoint, params=params)
