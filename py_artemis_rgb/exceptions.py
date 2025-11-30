@@ -22,4 +22,9 @@ class ArtemisCannotConnectError(ArtemisError):
 class ArtemisUnknownType(ArtemisError):
     """Exception raised when the data received does not correspond to expected types.
 
-    This may be raised when the API has changed."""
+    This may be raised when the API has changed.
+    """
+
+
+class ArtemisUnknownProfile(ArtemisError):
+    """Exception raised when a request is made with a profile id that does not exist."""

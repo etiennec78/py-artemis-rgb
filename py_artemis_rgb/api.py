@@ -16,8 +16,9 @@ from .types import BoolString, ArtemisProfile, ArtemisCategory
 _LOGGER = logging.getLogger(__name__)
 
 
-class Artemis:
+class ArtemisAPI:
     """Class for interacting with Artemis RGB API."""
+
     config: ArtemisConfig
 
     def __init__(self, config: ArtemisConfig):
@@ -25,6 +26,8 @@ class Artemis:
         self.config = config
 
     async def _fetch(self, endpoint: str) -> Any:
+        """Send a get command to Artemis API"""
+
         url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Fetching %s", url)
         try:
@@ -49,6 +52,8 @@ class Artemis:
             raise ArtemisCannotConnectError(f"Failed to fetch {url}") from exc
 
     async def _post(self, endpoint: str, data: Any = None) -> None:
+        """Send a post to Artemis API"""
+
         url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Post sent to %s", url)
         try:
@@ -72,7 +77,7 @@ class Artemis:
             raise ArtemisCannotConnectError(f"Failed to push to {url}") from exc
 
     async def _get_profiles(self) -> list[ArtemisProfile]:
-        """Fetch Artemis profile data."""
+        """Get Artemis profile data."""
         _LOGGER.info("Getting Artemis RGB profiles")
 
         endpoint = "profiles"
@@ -87,7 +92,7 @@ class Artemis:
         return typed_result
 
     async def _get_profile_categories(self) -> list[ArtemisCategory]:
-        """Fetch Artemis profile categories."""
+        """Get Artemis profile categories data."""
         _LOGGER.info("Getting Artemis RGB profile categories")
 
         endpoint = "profiles/categories"
