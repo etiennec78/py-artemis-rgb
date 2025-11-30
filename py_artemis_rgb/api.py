@@ -28,7 +28,7 @@ class ArtemisAPI:
     async def _fetch(self, endpoint: str) -> Any:
         """Send a get command to Artemis API"""
 
-        url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
+        url = f"http://{self.config.host}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Fetching %s", url)
         try:
             async with ClientSession() as session:
@@ -54,7 +54,7 @@ class ArtemisAPI:
     async def _post(self, endpoint: str, data: Any = None) -> None:
         """Send a post to Artemis API"""
 
-        url = f"http://{self.config.ip}:{self.config.port}/{endpoint}"
+        url = f"http://{self.config.host}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Post sent to %s", url)
         try:
             async with ClientSession() as session:
