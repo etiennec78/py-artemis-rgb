@@ -16,5 +16,5 @@ class ArtemisConfig:
         port: Port used by the Artemis RGB server
     """
 
-    ip: str
-    port: int
+    ip: str = "localhost"
+    port: int = 9696
