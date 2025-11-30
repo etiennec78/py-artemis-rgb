@@ -12,5 +12,4 @@ def bool_to_string(value: bool) -> BoolString:
 
 def profile_id_exists(profiles: list[ArtemisProfile], profile_id: UUID) -> bool:
     """Check that a profile id exists"""
-    print(f"PROFILE_ID: '{profile_id} {type(profile_id)}'\nDATA: '''{profiles}'''")
     return any(profile.Id == profile_id for profile in profiles)
