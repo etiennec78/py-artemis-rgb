@@ -5,6 +5,9 @@ the behavior of the Artemis RGB client.
 """
 
 from dataclasses import dataclass
+from typing import Optional
+
+from aiohttp import ClientSession
 
 
 @dataclass
@@ -18,3 +21,4 @@ class ArtemisConfig:
 
     host: str = "localhost"
     port: int = 9696
+    session: Optional[ClientSession] = None

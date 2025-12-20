@@ -4,6 +4,7 @@ This module provides functions for interacting with Artemis RGB API endpoints.
 """
 
 import logging
+from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
 
@@ -21,10 +22,20 @@ class ArtemisAPI:
     """Class for interacting with Artemis RGB API."""
 
     config: ArtemisConfig
+    session: ClientSession
 
     def __init__(self, config: ArtemisConfig) -> None:
         """Initialize the Artemis API client."""
         self.config = config
+        self.session = config.session
+
+    @asynccontextmanager
+    async def _get_session_context(self) -> Any:
+        if self.session:
+            yield self.session
+        else:
+            async with ClientSession() as session:
+                yield session
 
     async def _fetch(self, endpoint: str) -> Any:
         """Send a get command to Artemis API."""
@@ -32,21 +43,22 @@ class ArtemisAPI:
         url = f"http://{self.config.host}:{self.config.port}/{endpoint}"
         _LOGGER.debug("Fetching %s", url)
         try:
-            async with ClientSession() as session, session.get(url) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise ArtemisCannotConnectError(
-                        f"Server returned status {response.status}: {error_text}"
-                    )
+            async with self._get_session_context() as session:
+                async with session.get(url) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise ArtemisCannotConnectError(
+                            f"Server returned status {response.status}: {error_text}"
+                        )
 
-                if "application/json" not in response.headers.get(
-                    "Content-Type", ""
-                ):
-                    raise ArtemisCannotConnectError(
-                        "Expected JSON response but got different content type"
-                    )
+                    if "application/json" not in response.headers.get(
+                        "Content-Type", ""
+                    ):
+                        raise ArtemisCannotConnectError(
+                            "Expected JSON response but got different content type"
+                        )
 
-                return await response.json()
+                    return await response.json()
 
         except ClientError as exc:
             raise ArtemisCannotConnectError(f"Failed to fetch {url}") from exc
@@ -70,10 +82,11 @@ class ArtemisAPI:
                 kwargs = {"json": data}
             else:
                 kwargs = {"data": data}
-            async with ClientSession() as session, session.post(
-                url, params=params, **kwargs
-            ) as response:
-                response_text = await response.text()
+            async with self._get_session_context() as session:
+                async with session.post(
+                    url, params=params, **kwargs
+                ) as response:
+                    response_text = await response.text()
 
             if response.status != 204:
                 raise ArtemisCannotConnectError(
