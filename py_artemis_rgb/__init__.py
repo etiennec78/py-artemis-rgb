@@ -6,7 +6,12 @@ This package provides an interface for interacting with Artemis RGB software.
 from .artemis import Artemis
 from .config import ArtemisConfig
 from .types import ArtemisCategory, ArtemisProfile
-from .exceptions import ArtemisError, ArtemisCannotConnectError, ArtemisUnknownType
+from .exceptions import (
+    ArtemisError,
+    ArtemisCannotConnectError,
+    ArtemisUnknownType,
+    ArtemisUnknownProfile,
+)
 
 __all__ = [
     "Artemis",
@@ -16,4 +21,5 @@ __all__ = [
     "ArtemisError",
     "ArtemisCannotConnectError",
     "ArtemisUnknownType",
+    "ArtemisUnknownProfile",
 ]
